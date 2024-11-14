@@ -47,10 +47,10 @@ sqrtg_interp = interpolate.interp1d(Tt, sqrtg, kind='linear')
 ############################################################################
 
 def entropy(M, z):
-    2*pi*pi/45 * ( sqrtg_interp(M/z)**2 ) * (M/z)**3
+    return 2*pi*pi/45 * ( sqrtg_interp(M/z)**2 ) * (M/z)**3
 
 def Hubble(M, z):
-    2 * np.real( np.sqrt( pi**3/45 * ( sqrtg_interp(M/z)**2 ) ) ) * M**2/(Mpl * z**2)
+    return 2 * np.real( np.sqrt( pi**3/45 * ( sqrtg_interp(M/z)**2 ) ) ) * M**2/(Mpl * z**2)
 
 
 

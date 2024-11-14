@@ -2,6 +2,7 @@ import numpy as np
 from mpmath import *
 from scipy import integrate, interpolate
 import time
+from Basic_definitions import *
 mp.dps = 25; mp.pretty = True
 ######################################
 
@@ -133,6 +134,6 @@ def BSF_2s5_TA(z):
     return 10**mpf( float( BSF_2s5_TA_num_interp(z) ) )
 
 
-
+print(Hubble(10 * TeV, 10))
 
 
