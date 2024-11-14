@@ -5,30 +5,6 @@ import time
 mp.dps = 25; mp.pretty = True
 ######################################
 
-start = time.time()
-
-
-############################################################################
-
-# Define numerical constants
-
-############################################################################ 
-
-TeV = 1e3
-
-gx = 10 # Quintuplet dof
-gstarSS = 106.75 # SM dof
-Sqrtgs = sqrt(106.75) # sqrt of SM dof
-Mpl = 1.22e19 # Plank mass in GeV
-alpha = 0.0313 # alpha EW
-a22 = alpha*alpha # alpha^2 EW
-A2MZ = 0.0313 # alpha EW
-A25 = A2MZ**5.0 # alpha^5 EW (useful for ann gamma)
-Tc = 155 # Critical temperature for SM
-MW = 80.38 # W mass in GeV
-s2tw = 1- (80.38/91.18)**2.0 # sin^2 of weak mixing angle
-
-
 
 ############################################################################
 
@@ -57,19 +33,6 @@ def sigma0(M):
 
 def sigma0_prime(M):
   return pi*A2MZ**2.0/M**2.0 
-
-
-############################################################################
-
-# SM degrees of freedom as function of temperature
-
-############################################################################ 
-
-Tt, sqrtg = np.loadtxt('Num_lists/sqrtgsT.csv', usecols = (0,1), delimiter = ',', unpack=True)
-#Tts, gs = np.loadtxt('dof/gstarsT.csv',usecols = (0,1),delimiter=',',unpack=True)
-
-sqrtg_interp = interpolate.interp1d(Tt, sqrtg, kind='linear')
-#interpgs = interp1d(Tts, gs, kind='linear')
 
 
 ############################################################################
@@ -168,13 +131,6 @@ def BSF_2s3_TA(z):
 
 def BSF_2s5_TA(z):
     return 10**mpf( float( BSF_2s5_TA_num_interp(z) ) )
-
-print( BSF_2p1_TA(1e6) )
-print( BSF_2p3_TA(1e6) )
-
-
-end = time.time()
-# print(end - start)
 
 
 
