@@ -175,7 +175,12 @@ class Quintuplet_BS:
 
     def Gamma_ann_Hulthen_TA(self, z):
         correction = 1 + self.Hulthen_epsilon(z)**2
-        return self.gamma_ann() * correction * Kratio(z) 
+        return self.gamma_ann() * correction * Kratio(z)
+
+    def gI_ann_Hulthen(self, z):
+        prefactor = (2 * self.M**2/(2 * pi * z) )**(3/2)
+        expon = np.exp( -(2 - a22/2) * z )
+        return prefactor * expon * self.Gamma_ann_Hulthen_TA(z) 
 
 
 
