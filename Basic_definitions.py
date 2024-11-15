@@ -29,6 +29,8 @@ s2tw = 1- (80.38/91.18)**2.0 # sin^2 of weak mixing angle
 
 kappa = 1.74 # Hulthen factor 
 
+nS_Quintuplet = 5 # Quintuplet state
+
 
 ############################################################################
 
