@@ -14,14 +14,13 @@ mp.dps = 25; mp.pretty = True
 ############################################################################ 
 
 def Rvev(M, z):
-  return np.real( np.sqrt(1 - ((M/z)**2)/(Tc**2) ) )
+  return re( sqrt(1 - ((M/z)**2)/(Tc**2) ) )
 
 def MWSU2(M, z):
   return np.sqrt( 11/6 * ((M/z)**2) * alpha * 4 * pi )
 
 def MWTSU2(M, z):
   return np.sqrt( MW**2 * Rvev(M,z)**2 + MWSU2(M,z)**2 )
-
 
 ############################################################################
 
@@ -66,46 +65,53 @@ def SommHulthen_S3(eps, z):
 def SommHulthen_S5(eps, z):
     return 10**mpf( float( SommHulthen_S5_interp(eps, z) ) )
 
-
+# print( SommHulthen_S1(kappa * MWTSU2(10 * TeV, 1e6)/( alpha * lam[0] * 10 * TeV ), 1e6) )
 
 class Quintuplet_DM:
     """ Set of functions for the Quintuplet DM """
 
-    def __init__(self, DarkMatter_Mass, Isp, nS):
+    def __init__(self, DarkMatter_Mass):
         self.M = DarkMatter_Mass
-        self.Isp = Isp
-        self.nS = nS
-
-    ###############################
-    # Effective couplings of BS
-    ###############################
-
-    def alpha_eff(self):
-        lambda_eff = (2 * self.nS**2 - 1 - self.Isp**2)/8
-        return mpf(alpha*lambda_eff)
 
 
     ###############################
-    # epsilon factor in Hulthen potential
-    ############################### 
+    # Effective couplings for Quintuplet
+    ###############################
 
-    def Hulthen_epsilon(self, z):
-        return kappa * MWTSU2(self.M, z)/( self.alpha_eff() * self.M )
+    def lam(self):
+        return [6,5,3]
+
+    ###############################
+    # epsilon factor in Hulther potential
+    ###############################
+
+    def h_eps(self, z, i):
+        return kappa * MWTSU2(self.M, z)/( alpha * self.lam()[i] * self.M )
+
+    ###############################
+    # entropy and Hubble for DM
+    ###############################
+
+    def entropy(self, z):
+        return 2*pi*pi/45 * ( sqrtg_interp(self.M/z)**2 ) * (self.M/z)**3
+
+    def Hubble(self, z):
+        return 2 * np.real( np.sqrt( pi**3/45 * ( sqrtg_interp(self.M/z)**2 ) ) ) * self.M**2/(Mpl * z**2)
+
+    ###############################
+    # Equilibrium abundance for DM
+    ###############################
+
+    def Yeq(self, z):
+        pref = gx * 45 / ( 2 * pi**2 * (2 * pi)**(3/2) * sqrtg_interp(self.M/z)**2 )
+        return pref * K2_times_z2(z)
 
     ###############################
     # Production cross section with Sommerfeld enhancement (Hulthen potential)
     ###############################
 
     def sv_production(self, z):
-        S1 = 16/69 * SommHulthen_S1(self.Hulthen_epsilon(z), z)
-        S3 = 25/69 * SommHulthen_S3(self.Hulthen_epsilon(z), z)
-        S5 = 28/69 * SommHulthen_S5(self.Hulthen_epsilon(z), z)
+        S1 = 16/69 * SommHulthen_S1(self.h_eps(z, 0), z)
+        S3 = 25/69 * SommHulthen_S3(self.h_eps(z, 1), z)
+        S5 = 28/69 * SommHulthen_S5(self.h_eps(z, 2), z)
         return sigma0(self.M) * (S1 + S3 + S5)
-
-
-
-# BS_1s1 = Quintuplet_BS(10 * TeV, gI[0], n_energy[0], l_angular[0], 1, 5, BSF_1s1_TA, 3240.0)
-
-# print( BS_1s1.alpha_eff() )
-# print( BS_1s1.n_BS_eq(1e6) )
-# print( BS_1s1.gamma_ann() )
