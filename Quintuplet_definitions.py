@@ -93,10 +93,10 @@ class Quintuplet_DM:
     ###############################
 
     def entropy(self, z):
-        return 2*pi*pi/45 * ( sqrtg_interp(self.M/z)**2 ) * (self.M/z)**3
+        return 2*pi**2/45 * ( sqrtg_interp(self.M/z)**2 ) * (self.M/z)**3
 
     def Hubble(self, z):
-        return 2 * np.real( np.sqrt( pi**3/45 * ( sqrtg_interp(self.M/z)**2 ) ) ) * self.M**2/(Mpl * z**2)
+        return 2 * re( sqrt( pi**3/45 * ( sqrtg_interp(self.M/z)**2 ) ) ) * self.M**2/(Mpl * z**2)
 
     ###############################
     # Equilibrium abundance for DM
@@ -115,3 +115,4 @@ class Quintuplet_DM:
         S3 = 25/69 * SommHulthen_S3(self.h_eps(z, 1), z)
         S5 = 28/69 * SommHulthen_S5(self.h_eps(z, 2), z)
         return sigma0(self.M) * (S1 + S3 + S5)
+

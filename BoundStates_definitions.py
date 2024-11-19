@@ -84,7 +84,7 @@ def BSF_2s5_TA(z):
 def Hulthen_epsilon(M, z, Isp, nS):
     return kappa * MWTSU2(M, z)/( alpha_eff(Isp, nS) * M )
 
-class Quintuplet_BS:
+class Quintuplet_BS(Quintuplet_DM):
     """ Set of functions for the Bound States of Quintuplet DM """
 
     def __init__(self, DarkMatter_Mass, gI, nE, l, Isp, nS, BoundStateFormation_xsec, group_factor):
@@ -96,6 +96,7 @@ class Quintuplet_BS:
         self.nS = nS
         self.bsf = BoundStateFormation_xsec
         self.gf = group_factor
+        Quintuplet_DM.__init__(self, DarkMatter_Mass)
 
     ###############################
     # Effective couplings of BS
@@ -142,7 +143,7 @@ class Quintuplet_BS:
 
 
     def Y_BS_eq(self, z):
-        return self.n_BS_eq(z)/entropy(self.M, z)
+        return self.n_BS_eq(z)/self.entropy(z)
 
     ###############################
     # Breaking rates of BS
@@ -159,11 +160,11 @@ class Quintuplet_BS:
     ###############################
 
     def gamma_ann(self):
-        return self.gf * A25 * self.M
+        return self.gf * A25
 
     def Gamma_ann_Hulthen_TA(self, z):
         correction = 1 + self.Hulthen_epsilon(z)**2
-        return self.gamma_ann() * correction * Kratio(z)
+        return self.gamma_ann() * self.M * correction * Kratio(z)
 
     def gI_ann_Hulthen(self, z):
         prefactor = (2 * self.M**2/(2 * pi * z) )**(3/2)
@@ -190,4 +191,7 @@ gf_list = [3240.0, 15625.0/48.0, 567.0/4.0, 405.0, 15625.0/384.0, 567.0/32.0, 1,
 
 # Gdec = [0.0, 0.0, 0.0, s2tw*A25*s2tw*A2MZ*mdm, s2tw*A25*s2tw*A2MZ*mdm, s2tw*A25*s2tw*A2MZ*mdm, 2.0*s2tw*A25*mdm, 1.3*s2tw*A25*mdm, 0.2*s2tw*A25*mdm]
 
+# BS_1s1 = Quintuplet_BS(10 * TeV, gI_list[0], nE_list[0], l_list[0], Isp_list[0], nS_Quint, BS_func_list[0], gf_list[0])
 
+# print( BS_1s1.entropy(1e3) )
+# print( BS_1s1.Y_BS_eq(1e3) )

@@ -49,10 +49,12 @@ M_DM_scan = np.linspace(3 * TeV, 14 * TeV, 10)
 
 def NDE_solver(Boltz, n):
     y0 = np.full( (n), [1.e-30,])
-    teval = np.logspace(np.log10(3.5), 6.9, 100)
-    tspan=[3.0, 1.e7]
+    teval = np.logspace(np.log10(3.5), 5.9, 100)
+    tspan=[3.0, 1.e6]
     
-    return solve_ivp(Boltz, tspan, y0 = y0, method = 'Radau', t_eval = teval, atol=1.e-21)
+    return solve_ivp(Boltz, tspan, y0 = y0, method = 'Radau', t_eval = teval, atol=1.e-20)
+
+
 
 ############################################################################
 
@@ -69,16 +71,108 @@ def Boltzmann_Hulthen_free(DM, z, Y):
     return prefactor * DM.sv_production(z) * abundances
 
 
-for M_DM in M_DM_scan:
-    
-    DM = Quintuplet_DM(M_DM)
+def do_scan_Boltzmann_Hulthen_free():
 
-    bb = lambda z, Y: Boltzmann_Hulthen_free(DM, z, Y)
+    Omega_Boltzmann_Hulthen_free = []
 
-    solution_free = NDE_solver(bb, 1)
+    for M_DM in M_DM_scan:
+        
+        DM = Quintuplet_DM(M_DM)
 
-    print( Omega_DM(1.0, solution_free.y[0][-1], M_DM) )
+        bb = lambda z, Y: Boltzmann_Hulthen_free(DM, z, Y)
 
+        solution_free = NDE_solver(bb, 1)
+
+        omega_solution = Omega_DM(1.0, solution_free.y[0][-1], M_DM)
+
+        print( Omega_DM(1.0, solution_free.y[0][-1], M_DM) )
+        Omega_Boltzmann_Hulthen_free.append([M_DM, omega_solution])
+
+    np.savetxt('./Results/Omega_Boltzmann_Hulthen_free.txt', Omega_Boltzmann_Hulthen_free)
+
+
+
+############################################################################
+
+# Define Boltzmann equation with 1s BS (effective equation)
+
+############################################################################ 
+
+
+def BS_eff(BS, M, z):
+
+    first_term = 1/BS.bsf(z)
+    second_term_1 = gx**2 * sigma0_prime(M) * M**2/( 2 * BS.gI * BS.gamma_ann() )
+    second_term_2 = ( 1 / (4*pi*z) )**(3/2)
+    second_term_3 = np.exp( - z * BS.binding_energy_BS(z) )
+
+    return sigma0_prime(M) * 1/(first_term + second_term_1 * second_term_2 * second_term_3)
+
+    # return [sigma0_prime(M)/( * np.exp( - z * BS_list[i].binding_energy_BS(z)) ) for i in range(len(BS_list))]
+
+# BS_1s1 = Quintuplet_BS(10 * TeV, gI_list[0], nE_list[0], l_list[0], Isp_list[0], nS_Quint, BS_func_list[0], gf_list[0])
+# BS_1s3 = Quintuplet_BS(10 * TeV, gI_list[0], nE_list[0], l_list[0], Isp_list[0], nS_Quint, BS_func_list[0], gf_list[0])
+# BS_1s5 = Quintuplet_BS(10 * TeV, gI_list[0], nE_list[0], l_list[0], Isp_list[0], nS_Quint, BS_func_list[0], gf_list[0])
+
+# BS_1s_list = [BS_1s1,BS_1s3,BS_1s5] 
+
+# print( BS_eff(BS_1s1, 10 * TeV, 1e3) )
+# print( np.sum([BS_eff(BS, 10 * TeV, 1e3) for BS in BS_1s_list] ) )
+
+def Boltzmann_Hulthen_1s_effective(DM, BS_list, z, Y):
+
+    M = DM.M
+
+    prefactor = - DM.entropy(z)/( z * DM.Hubble(z) )
+
+    abundances = Y**2 - DM.Yeq(z)**2
+
+    sv_eff = DM.sv_production(z) + np.sum([BS_eff(BS, M, z) for BS in BS_list])
+
+    return prefactor * sv_eff * abundances
+
+
+
+def do_scan_Boltzmann_Hulthen_1s_effective():
+
+    Omega_Boltzmann_Hulthen_1s_effective = []
+
+    for M_DM in M_DM_scan:
+        
+        DM = Quintuplet_DM(M_DM)
+
+        # # Variable order is: (Mass, gI, nE, l, I, nS, BS function, group factor constant)
+
+        BS_1s1 = Quintuplet_BS(M_DM, gI_list[0], nE_list[0], l_list[0], Isp_list[0], nS_Quint, BS_func_list[0], gf_list[0])
+        BS_1s3 = Quintuplet_BS(M_DM, gI_list[1], nE_list[1], l_list[1], Isp_list[1], nS_Quint, BS_func_list[1], gf_list[1])
+        BS_1s5 = Quintuplet_BS(M_DM, gI_list[2], nE_list[2], l_list[2], Isp_list[2], nS_Quint, BS_func_list[2], gf_list[2])
+
+        BS_1s_list = [BS_1s1, BS_1s3, BS_1s5]
+
+        bb = lambda z, Y: Boltzmann_Hulthen_1s_effective(DM, BS_1s_list, z, Y)
+
+        solution = NDE_solver(bb, 1)
+        
+        omega_solution = Omega_DM(1.0, solution.y[0][-1], M_DM)
+
+        print( Omega_DM(1.0, solution.y[0][-1], M_DM) )
+        Omega_Boltzmann_Hulthen_1s_effective.append([M_DM, omega_solution])
+
+    np.savetxt('./Results/Omega_Boltzmann_Hulthen_1s_effective.txt', Omega_Boltzmann_Hulthen_1s_effective)
+
+
+############################################################################
+
+# Do selected scan
+
+############################################################################ 
+
+# Scan with free Boltzmann equation, using Hulthen potential
+do_scan_Boltzmann_Hulthen_free()
+
+
+# Scan with effective Boltzmann equation, using all 1s BS
+do_scan_Boltzmann_Hulthen_1s_effective()
 
 end = time.time()
 print(end - start)
