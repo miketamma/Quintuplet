@@ -17,7 +17,7 @@ start = time.time()
 
 ############################################################################
 
-M_DM_scan = np.linspace(3 * TeV, 14 * TeV, 10)
+M_DM_scan = np.linspace(3 * TeV, 14 * TeV, 100)
 
 
 # DM = Quintuplet_DM(M_DM)
@@ -55,6 +55,41 @@ def NDE_solver(Boltz, n):
     return solve_ivp(Boltz, tspan, y0 = y0, method = 'Radau', t_eval = teval, atol=1.e-20)
 
 
+############################################################################
+
+# Define Boltzmann equation without BS
+
+############################################################################ 
+
+def Boltzmann_Tree(DM, z, Y):
+
+    prefactor = - DM.entropy(z)/( z * DM.Hubble(z) )
+
+    abundances = Y**2 - DM.Yeq(z)**2
+
+    return prefactor * DM.sv_production_NoSomm(z) * abundances
+
+
+def do_scan_Boltzmann_Tree():
+
+    Omega_Boltzmann_Tree = []
+
+    for M_DM in M_DM_scan:
+        
+        DM = Quintuplet_DM(M_DM)
+
+        bb = lambda z, Y: Boltzmann_Tree(DM, z, Y)
+
+        solution = NDE_solver(bb, 1)
+
+        omega_solution = Omega_DM(1.0, solution.y[0][-1], M_DM)
+
+        print( Omega_DM(1.0, solution.y[0][-1], M_DM) )
+        Omega_Boltzmann_Tree.append([M_DM, omega_solution])
+
+    np.savetxt('./Results/Omega_Boltzmann_Tree.txt', Omega_Boltzmann_Tree)
+
+
 
 ############################################################################
 
@@ -68,7 +103,7 @@ def Boltzmann_Hulthen_free(DM, z, Y):
 
     abundances = Y**2 - DM.Yeq(z)**2
 
-    return prefactor * DM.sv_production(z) * abundances
+    return prefactor * DM.sv_production_Somm_Hulthen(z) * abundances
 
 
 def do_scan_Boltzmann_Hulthen_free():
@@ -127,7 +162,7 @@ def Boltzmann_Hulthen_1s_effective(DM, BS_list, z, Y):
 
     abundances = Y**2 - DM.Yeq(z)**2
 
-    sv_eff = DM.sv_production(z) + np.sum([BS_eff(BS, M, z) for BS in BS_list])
+    sv_eff = DM.sv_production_Somm_Hulthen(z) + np.sum([BS_eff(BS, M, z) for BS in BS_list])
 
     return prefactor * sv_eff * abundances
 
@@ -167,12 +202,15 @@ def do_scan_Boltzmann_Hulthen_1s_effective():
 
 ############################################################################ 
 
+# Scan with free Boltzmann equation
+do_scan_Boltzmann_Tree()
+
 # Scan with free Boltzmann equation, using Hulthen potential
-do_scan_Boltzmann_Hulthen_free()
+# do_scan_Boltzmann_Hulthen_free()
 
 
 # Scan with effective Boltzmann equation, using all 1s BS
-do_scan_Boltzmann_Hulthen_1s_effective()
+# do_scan_Boltzmann_Hulthen_1s_effective()
 
 end = time.time()
 print(end - start)

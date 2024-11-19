@@ -41,6 +41,21 @@ def sigma0_prime(M):
 
 ############################################################################
 
+epsilon, zeta, NoSomm_S1_num, NoSomm_S3_num, NoSomm_S5_num = np.loadtxt('Num_lists/NoSommTA.txt', unpack = True)
+
+
+NoSomm_S1_interp = interpolate.NearestNDInterpolator(list(zip(epsilon, zeta)), NoSomm_S1_num)
+NoSomm_S3_interp = interpolate.NearestNDInterpolator(list(zip(epsilon, zeta)), NoSomm_S3_num)
+NoSomm_S5_interp = interpolate.NearestNDInterpolator(list(zip(epsilon, zeta)), NoSomm_S5_num)
+
+def NoSomm_S1(eps, z):
+    return 10**mpf( float( NoSomm_S1_interp(eps, z) ) )
+
+def NoSomm_S3(eps, z):
+    return 10**mpf( float( NoSomm_S3_interp(eps, z) ) )
+
+def NoSomm_S5(eps, z):
+    return 10**mpf( float( NoSomm_S5_interp(eps, z) ) )
 
 ###############################
 
@@ -107,10 +122,21 @@ class Quintuplet_DM:
         return pref * K2_times_z2(z)
 
     ###############################
+    # Production cross section with NO Sommerfeld enhancement
+    ###############################
+
+
+    def sv_production_NoSomm(self, z):
+        S1 = NoSomm_S1(self.h_eps(z, 0), z)
+        
+        return sigma0(self.M) * S1
+
+
+    ###############################
     # Production cross section with Sommerfeld enhancement (Hulthen potential)
     ###############################
 
-    def sv_production(self, z):
+    def sv_production_Somm_Hulthen(self, z):
         S1 = 16/69 * SommHulthen_S1(self.h_eps(z, 0), z)
         S3 = 25/69 * SommHulthen_S3(self.h_eps(z, 1), z)
         S5 = 28/69 * SommHulthen_S5(self.h_eps(z, 2), z)
