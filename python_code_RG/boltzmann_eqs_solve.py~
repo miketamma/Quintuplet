@@ -1,0 +1,411 @@
+import matplotlib.pyplot as plt
+import numpy as np
+from mpmath import *
+from scipy.integrate import solve_ivp, odeint, RK45
+from scipy.interpolate import griddata, interpolate, interp1d
+from scipy.interpolate import CloughTocher2DInterpolator
+from scipy.interpolate import LinearNDInterpolator
+from scipy.interpolate import NearestNDInterpolator
+import os, sys, subprocess, glob, time, random, shutil
+import time
+mp.dps = 25; mp.pretty = True
+###
+t0 = time.time()  # start timing
+############################load sommerfeld table: to be multiplied with 207/20*pi*alpha^2/mx^2
+eps, zz, svA, sv6,sv5, sv3=np.loadtxt('bsf_sigmas/thavg_huelthen_eps_z_s653_save.dat',usecols = (0,1,3,5,7,9),delimiter=',',unpack=True)
+
+interp6 = NearestNDInterpolator(list(zip(eps, zz)), sv6)
+interp5 = NearestNDInterpolator(list(zip(eps, zz)), sv5)
+interp3 = NearestNDInterpolator(list(zip(eps, zz)), sv3)
+
+### load bsf rates: to be multiplied with 207/20*pi*alpha^2/mx^2
+ee,zzi, val1s1,val1s3,val1s5, val2s1,val2s3,val2s5, val2p1,val2p3,val2p5 =np.loadtxt('bsf_sigmas/thavg_bsfall_eps_z_save.dat',usecols = (0,1,2,3,4,5,6,7,8,9,10),delimiter=',',unpack=True)
+
+sv1s1 = interp1d(zzi, val1s1, kind='linear')
+sv1s3 = interp1d(zzi, val1s3, kind='linear')
+sv1s5 = interp1d(zzi, val1s5, kind='linear')
+
+sv2s1 = interp1d(zzi, val2s1, kind='linear')
+sv2s3 = interp1d(zzi, val2s3, kind='linear')
+sv2s5 = interp1d(zzi, val2s5, kind='linear')
+
+sv2p1 = interp1d(zzi, val2p1, kind='linear')
+sv2p3 = interp1d(zzi, val2p3, kind='linear')
+sv2p5 = interp1d(zzi, val2p5, kind='linear')
+
+### load sqrt(g_star) and g_star_s
+Tt, sqrtg  =np.loadtxt('dof/sqrtgsT.csv',usecols = (0,1),delimiter=',',unpack=True)
+Tts, gs  =np.loadtxt('dof/gstarsT.csv',usecols = (0,1),delimiter=',',unpack=True)
+
+interpsqgs = interp1d(Tt, sqrtg, kind='linear')
+interpgs = interp1d(Tts, gs, kind='linear')
+
+
+
+###################################### Input mass
+mdm = float(sys.argv[1])
+
+######### variable definitions
+gx =10
+gstarSS = 106.75
+Sqrtgs = sqrt(106.75)
+Mpl = 1.22e19
+alpha = 0.0313
+a22 = alpha*alpha
+A2MZ = 0.0313
+A25 = A2MZ**5.0
+Tc=155
+MW=80.38
+sig0p = 207.0/20.0*pi*A2MZ**2.0/mdm**2.0
+s2tw = 1- (80.38/91.18)**2.0
+###########################################
+###### function definitions
+# Equilibrium distribution: gg: degrees of freedom; x = z
+def Yeq(gg, x):
+    prefactor = 90.0/(2.0*pi)**(7.0/2.0)
+    term = gg/interpgs(mdm/x)*(x)**(3.0/2.0)*exp(-x)
+    return prefactor*term
+
+
+###
+# Binding energy/mdm :  li = \lambda_i; nn = n ; ll =l
+def ebi(li,nn,ll,mx):
+    kappa = 1.74
+    yy = kappa * MW/(li*A2MZ*mx)
+    pref = (li*A2MZ)**2.0/(4.0*nn*nn)
+    term = np.power(1.0 - nn*nn*yy - 0.53*nn*nn*yy*yy*ll*(ll+1.0)  ,2.0)
+    return pref*term
+
+## Gamma_break (Milne): gI= dof of BS; sigv = <sigma v>_{xx -> I}
+def Gbreak(gI,li,nn,ll,mx,zz,sigv):
+    ebii = ebi(li,nn,ll,mx)
+    term = sig0p*sigv*exp(-zz*ebii)
+    term1 = (4.0*pi*zz)**(-3.0/2.0)
+    pref= gx*gx/(2.0*gI)*mx*mx*mx
+    return pref*term1*term
+
+## same as above but without exp(-z Eb)
+def Gbreakwo(gI,li,nn,ll,mx,zz,sigv):
+    ebii = ebi(li,nn,ll,mx)
+    term = sig0p*sigv
+    term1 = (4.0*pi*zz)**(-3.0/2.0)
+    pref= gx*gx/(2.0*gI)*mx*mx*mx
+    return pref*term1*term
+
+
+##### \lambda_d
+def lambdad(zz,mx):
+    pref= (45.0/4.0/pi**3.0)**0.5
+    term = Mpl/mx/mx
+    #dof = Sqrtgs/gstarSS   # for const gstars
+    dof = interpsqgs(mx/zz)/interpgs(mx/zz)
+    return pref*term*dof
+
+##### \lambda
+def lambda1(zz,mx):
+    pref= (pi/45.0)**0.5
+    term = Mpl*mx
+    #dof = Sqrtgs         # for const gstars
+    dof = interpsqgs(mx/zz)
+    return pref*term*dof
+
+######## Arrays of quanta = 9
+# order: 1s1, 1s3, 1s5, 2s1, 2s3, 2s5, 2p1, 2p3, 2p5
+# lambda_i, n ,l, g_I
+lam = [6.0, 5.0, 3.0, 6.0, 5.0, 3.0, 6.0, 5.0, 3.0]
+nar = [1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0]
+lar = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0]
+gIr = [1.0, 9.0, 5.0, 1.0, 9.0, 5.0, 3.0, 3.0, 15.0]
+## array of ann rate and transition rates
+##Gann = [3240.0*A25*mdm, 15625.0/48.0*A25*mdm, 567.0/4.0*A25*mdm, 405.0*A25*mdm, 15625.0/384.0*A25*mdm, 567.0/32.0*A25*mdm, 0.0, 0.0, 0.0 ]
+##Gdec = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0*s2tw*A25*mdm, 1.3*s2tw*A25*mdm, 0.2*s2tw*A25*mdm]
+Gann = [3240.0*A25*mdm, 15625.0/48.0*A25*mdm, 567.0/4.0*A25*mdm, 405.0*A25*mdm, 15625.0/384.0*A25*mdm, 567.0/32.0*A25*mdm, A25*a22*mdm, A25*a22*mdm, A25*a22*mdm ]
+Gdec = [0.0, 0.0, 0.0, s2tw*A25*s2tw*A2MZ*mdm, s2tw*A25*s2tw*A2MZ*mdm, s2tw*A25*s2tw*A2MZ*mdm, 2.0*s2tw*A25*mdm, 1.3*s2tw*A25*mdm, 0.2*s2tw*A25*mdm]
+## array of binding energies
+Ebiarr=[]
+for ii in range(0,len(lam)):
+    Ebiarr.append(ebi(lam[ii],nar[ii],lar[ii],mdm))
+    
+####################################################
+## Effective boltzmann equation: with varying gstar
+def dydzbseff(t,yi):
+    x=t
+    y=yi
+    ll = lambda1(x,mdm)
+    lli= lambdad(x,mdm)
+    TT=mdm/x
+    Rvev = re(sqrt(1- TT*TT/(Tc*Tc)))
+    mphi=sqrt(11./6.*4.0*pi*alpha*TT*TT+ MW*MW*Rvev*Rvev)
+    medi=mphi/(mdm*alpha*pi)
+    sommerf= 16.0/69.0*(10.**interp6(-medi/6.0 ,x)) + 25.0/69.0*(10.**interp5(-medi/5.0 ,x)) + 28.0/69.0*(10.**interp3(-medi/3.0 ,x) )
+    ### sv boundstate array
+    svbs=[sig0p*sv1s1(x), sig0p*sv1s3(x), sig0p*sv1s5(x), sig0p*sv2s1(x), sig0p*sv2s3(x), sig0p*sv2s5(x), sig0p*sv2p1(x), sig0p*sv2p3(x), sig0p*sv2p5(x)]
+    termeff= 0.0
+    for ii in range(0, len(gIr)):
+        if(Gann[ii]!=0):
+            bsterm = np.power(sig0p/(svbs[ii]) + gx*gx/(2.0*gIr[ii]*Gann[ii])*sig0p*mdm**3.0*(1.0/(4.0*pi*x))**(3.0/2.0)*exp(-x*Ebiarr[ii]),-1.0)
+            termeff = termeff +  bsterm
+            bsterm = 0.0
+    
+    sigveff = sig0p*sommerf + sig0p*termeff
+    dydxi = -ll/(x*x)*sigveff *(y*y - Yeq(gx,x)*Yeq(gx,x)) 
+    
+    return dydxi
+
+## Effective boltzmann equation: with constant
+def dydzbseffgsc(t,yi):
+    x=t
+    y=yi
+    #ll = lambda1(x,mdm)
+    #lli= lambdad(x,mdm)
+    gstar = gstarSS
+    ll = sqrt(gstar*pi/45)*Mpl*mdm
+    lli = 1./sqrt(gstar*8*pi**3./90) * Mpl/(mdm*mdm)
+
+    TT=mdm/x
+    Rvev = re(sqrt(1- TT*TT/(Tc*Tc)))
+    mphi=sqrt(11./6.*4.0*pi*alpha*TT*TT+ MW*MW*Rvev*Rvev)
+    medi=mphi/(mdm*alpha*pi)
+    sommerf= 16.0/69.0*(10.**interp6(-medi/6.0 ,x)) + 25.0/69.0*(10.**interp5(-medi/5.0 ,x)) + 28.0/69.0*(10.**interp3(-medi/3.0 ,x) )
+    ### sv boundstate array
+    svbs=[sig0p*sv1s1(x), sig0p*sv1s3(x), sig0p*sv1s5(x), sig0p*sv2s1(x), sig0p*sv2s3(x), sig0p*sv2s5(x), sig0p*sv2p1(x), sig0p*sv2p3(x), sig0p*sv2p5(x)]
+    termeff= 0.0
+    for ii in range(0, len(gIr)):
+        if(Gann[ii]!=0):
+            bsterm = np.power(sig0p/(svbs[ii]) + gx*gx/(2.0*gIr[ii]*Gann[ii])*sig0p*mdm**3.0*(1.0/(4.0*pi*x))**(3.0/2.0)*exp(-x*Ebiarr[ii]),-1.0)
+            termeff = termeff +  bsterm
+            bsterm = 0.0
+    
+    sigveff = sig0p*sommerf + sig0p*termeff
+    dydxi = -ll/(x*x)*sigveff *(y*y - Yeq(gx*interpgs(mdm/x)/gstar,x)*Yeq(gx*interpgs(mdm/x)/gstar,x)) 
+    
+    return dydxi
+
+###################################
+## Network without inter bound-state transitions
+def dydz9(t,yi):
+    x=t
+    y=yi[0]   # dm
+    y1=yi[1]  # 1s1
+    y2=yi[2]  # 1s3
+    y3=yi[3]  # 1s5
+    y4=yi[4]  # 2s1
+    y5=yi[5]  # 2s3
+    y6=yi[6]  # 2s5
+    y7=yi[7]  # 2s1
+    y8=yi[8]  # 2s3
+    y9=yi[9]  # 2s5
+    
+    ll = lambda1(x,mdm)
+    lli= lambdad(x,mdm)
+    TT=mdm/x
+    Rvev = re(sqrt(1- TT*TT/(Tc*Tc)))
+    mphi=sqrt(11./6.*4.0*pi*alpha*TT*TT+ MW*MW*Rvev*Rvev)
+    medi=mphi/(mdm*alpha*pi)
+    sommerf= 16.0/69.0*(10.**interp6(-medi/6.0 ,x)) + 25.0/69.0*(10.**interp5(-medi/5.0 ,x)) + 28.0/69.0*(10.**interp3(-medi/3.0 ,x) )
+    ### sv boundstate array
+    svbs=[sig0p*sv1s1(x), sig0p*sv1s3(x), sig0p*sv1s5(x), sig0p*sv2s1(x), sig0p*sv2s3(x), sig0p*sv2s5(x), sig0p*sv2p1(x), sig0p*sv2p3(x), sig0p*sv2p5(x)]
+    bsfsum=0.0
+    for ii in range(1,len(gIr)+1):
+        xbsf = x*(2- Ebiarr[ii-1])
+        yieq = Yeq(gIr[ii-1],xbsf)
+        termi = svbs[ii-1]*(yi[0]**2.0 - Yeq(gx,x)**2.0*yi[ii]/yieq )
+        bsfsum  = bsfsum + termi
+        
+    ## eq. for DM 
+    dydx0 = -ll/(x*x)*sig0p*sommerf*(yi[0]**2.0 - Yeq(gx,x)**2.0) -ll/(x*x)*bsfsum
+
+    ## eqs. for bound-states
+    dydxi=[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    #for ii in range(1,len(gIr)+1):
+    # GTA = \lambda_d * z * \gamma_break*Yieq/Y_chi^2_eq *Y^2_\chi
+    # GBI = \lambda_d * z * \gamma_break*Yi
+    for ii in range(1,9):
+        xbsf = x*(2.0 - Ebiarr[ii-1])
+        yieq = Yeq(gIr[ii-1],xbsf)
+        GTA = lli*x*Gbreakwo(gIr[ii-1],lam[ii-1],nar[ii-1],lar[ii-1],mdm,x,svbs[ii-1])*(16.0*pi*pi/(45.0)*gIr[ii-1]*interpgs(mdm/x)/(gx*gx)*(pi/x)**(3.0/2.0))*yi[0]**2.0
+        GBI = lli*x*Gbreak(gIr[ii-1],lam[ii-1],nar[ii-1],lar[ii-1],mdm,x,svbs[ii-1])*yi[ii]
+        GIA = lli*x*Gann[ii-1]*(yieq - yi[ii])
+        dydxi[ii-1] = GTA  - GBI + GIA
+        
+    return [dydx0, dydxi[0], dydxi[1], dydxi[2], dydxi[3], dydxi[4], dydxi[5], dydxi[6], dydxi[7], dydxi[8] ]
+
+
+## Network with inter bound-state transitions
+def dydz9ibs(t,yi):
+    x=t
+    y=yi[0]   # dm
+    y1=yi[1]  # 1s1
+    y2=yi[2]  # 1s3
+    y3=yi[3]  # 1s5
+    y4=yi[4]  # 2s1
+    y5=yi[5]  # 2s3
+    y6=yi[6]  # 2s5
+    y7=yi[7]  # 2s1
+    y8=yi[8]  # 2s3
+    y9=yi[9]  # 2s5
+    
+    ll = lambda1(x,mdm)
+    lli= lambdad(x,mdm)
+    TT=mdm/x
+    Rvev = re(sqrt(1- TT*TT/(Tc*Tc)))
+    mphi=sqrt(11./6.*4.0*pi*alpha*TT*TT+ MW*MW*Rvev*Rvev)
+    medi=mphi/(mdm*alpha*pi)
+    sommerf= 16.0/69.0*(10.**interp6(-medi/6.0 ,x)) + 25.0/69.0*(10.**interp5(-medi/5.0 ,x)) + 28.0/69.0*(10.**interp3(-medi/3.0 ,x) )
+    ### sv boundstate array
+    svbs=[sig0p*sv1s1(x), sig0p*sv1s3(x), sig0p*sv1s5(x), sig0p*sv2s1(x), sig0p*sv2s3(x), sig0p*sv2s5(x), sig0p*sv2p1(x), sig0p*sv2p3(x), sig0p*sv2p5(x)]
+    #### bsf sum for DM eqn.
+    bsfsum=0.0
+    for ii in range(1,len(gIr)+1):
+        xbsf = x*(2- Ebiarr[ii-1])
+        yieq = Yeq(gIr[ii-1],xbsf)
+        termi = svbs[ii-1]*(yi[0]**2.0 - Yeq(gx,x)**2.0*yi[ii]/yieq )
+        bsfsum  = bsfsum + termi
+        
+    ## eq. for DM 
+    dydx0 = -ll/(x*x)*sig0p*sommerf*(yi[0]**2.0 - Yeq(gx,x)**2.0) -ll/(x*x)*bsfsum
+
+    ## eqs. for bound-states
+    dydxi=[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    for ii in range(1,len(gIr)+1):
+    #for ii in range(1,9):
+        xbsf = x*(2.0 - Ebiarr[ii-1])
+        yieq = Yeq(gIr[ii-1],xbsf)
+        # GTA = \lambda_d * z * \gamma_break*Yieq/Y_chi^2_eq *Y^2_\chi
+        # GBI = \lambda_d * z * \gamma_break*Yi
+        GTA = lli*x*Gbreakwo(gIr[ii-1],lam[ii-1],nar[ii-1],lar[ii-1],mdm,x,svbs[ii-1])*(16.0*pi*pi/(45.0)*gIr[ii-1]*interpgs(mdm/x)/(gx*gx)*(pi/x)**(3.0/2.0))*yi[0]**2.0
+        GBI = lli*x*Gbreak(gIr[ii-1],lam[ii-1],nar[ii-1],lar[ii-1],mdm,x,svbs[ii-1])*yi[ii]
+        GIA = lli*x*Gann[ii-1]*(yieq - yi[ii])
+        IBS = 0.0
+        if(ii==1):        #1s1
+            termij = 0.0
+            for jj in range(0,8):
+                if(jj == 7):
+                    xjbsf = x*(2.0 - Ebiarr[jj])
+                    yjeq = Yeq(gIr[jj],xjbsf)
+                    termij = termij + Gdec[ii-1]*(yi[jj+1] - yjeq/yieq*yi[ii]) 
+            IBS = termij
+
+        if(ii==2):      #1s3
+            termij = 0.0
+            for jj in range(0,8):
+                if(jj == 6 or jj == 8 ):
+                    xjbsf = x*(2.0 - Ebiarr[jj])
+                    yjeq = Yeq(gIr[jj],xjbsf)
+                    termij = termij + Gdec[ii-1]*(yi[jj+1] - yjeq/yieq*yi[ii]) 
+            IBS = termij
+
+        if(ii==3):      #1s5
+            termij = 0.0
+            for jj in range(0,8):
+                if(jj == 7 ):
+                    xjbsf = x*(2.0 - Ebiarr[jj])
+                    yjeq = Yeq(gIr[jj],xjbsf)
+                    termij = termij + Gdec[ii-1]*(yi[jj+1] - yjeq/yieq*yi[ii]) 
+            IBS = termij
+
+        if(ii==4):        #2s1
+            termij = 0.0
+            for jj in range(0,8):
+                if(jj == 7):
+                    xjbsf = x*(2.0 - Ebiarr[jj])
+                    yjeq = Yeq(gIr[jj],xjbsf)
+                    termij = termij + Gdec[ii-1]*(yi[jj+1] - yjeq/yieq*yi[ii]) 
+            IBS = termij
+
+        if(ii==5):      #2s3
+            termij = 0.0
+            for jj in range(0,8):
+                if(jj == 6 or jj == 8 ):
+                    xjbsf = x*(2.0 - Ebiarr[jj])
+                    yjeq = Yeq(gIr[jj],xjbsf)
+                    termij = termij + Gdec[ii-1]*(yi[jj+1] - yjeq/yieq*yi[ii]) 
+            IBS = termij
+
+        if(ii==6):      #2s5
+            termij = 0.0
+            for jj in range(0,8):
+                if(jj == 7 ):
+                    xjbsf = x*(2.0 - Ebiarr[jj])
+                    yjeq = Yeq(gIr[jj],xjbsf)
+                    termij = termij + Gdec[ii-1]*(yi[jj+1] - yjeq/yieq*yi[ii]) 
+            IBS = termij
+
+        if(ii==7):   #2p1
+            termij = 0.0
+            for jj in range(0,8):
+                if(jj == 1 or jj == 4):
+                    xjbsf = x*(2.0 - Ebiarr[jj])
+                    yjeq = Yeq(gIr[jj],xjbsf)
+                    termij = termij + Gdec[ii-1]*(yieq/yjeq*yi[jj+1] - yi[ii]) 
+            IBS = termij
+            
+        if(ii==8):  #2p3
+            termij = 0.0
+            for jj in range(0,8):
+                if(jj == 0 or jj == 2 or jj == 3 or jj == 5):
+                    xjbsf = x*(2.0 - Ebiarr[jj])
+                    yjeq = Yeq(gIr[jj],xjbsf)
+                    termij = termij + Gdec[ii-1]*(yieq/yjeq*yi[jj+1] - yi[ii]) 
+            IBS = termij
+        if(ii==9):  # 2p5
+            termij = 0.0
+            for jj in range(0,8):
+                if(jj == 1 or jj == 4 ):
+                    xjbsf = x*(2.0 - Ebiarr[jj])
+                    yjeq = Yeq(gIr[jj],xjbsf)
+                    termij = termij + Gdec[ii-1]*(yieq/yjeq*yi[jj+1] - yi[ii]) 
+            IBS = termij
+
+        
+        dydxi[ii-1] = GTA  - GBI + GIA + IBS
+        
+    return [dydx0, dydxi[0], dydxi[1], dydxi[2], dydxi[3], dydxi[4], dydxi[5], dydxi[6], dydxi[7], dydxi[8] ]
+
+
+
+
+
+##########solve diff eqs
+##############
+y0 = [1.e-30,]
+teval = np.logspace(np.log10(3.5), 5.9,100)
+tspan=[3.0,1.e6]
+################### effective all B-S: varying gstar
+solSbseff = solve_ivp(dydzbseff,tspan,y0=y0,method='Radau', t_eval=teval, atol=1.e-21)
+# Omega
+omega_bseff= 0.11*1.e9/0.4*mdm*solSbseff.y[0][-1]
+
+
+
+############ effective  all B-S: const. gstar
+solSbseffgsc = solve_ivp(dydzbseffgsc,tspan,y0=y0,method='Radau', t_eval=teval, atol=1.e-21)
+omega_bseffgsc= 0.11*1.e9/0.4*mdm*solSbseffgsc.y[0][-1]
+
+########## network without interbs
+y0ia = [1.e-30, 1.e-30, 1.e-30, 1.e-30, 1.e-30, 1.e-30, 1.e-30, 1.e-30, 1.e-30, 1.e-30]
+
+solSnet = solve_ivp(dydz9,tspan,y0=y0ia,method='Radau', t_eval=teval, atol=1.e-21)
+# Omega
+omega_net= 0.11*1.e9/0.4*mdm*solSnet.y[0][-1]
+
+### with interbs
+solSnetibs = solve_ivp(dydz9ibs,tspan,y0=y0ia,method='Radau', t_eval=teval, atol=1.e-21)
+# Omega
+omega_netibs= 0.11*1.e9/0.4*mdm*solSnetibs.y[0][-1]
+
+tf = time.time()
+
+
+
+#### print and write out
+print('mdm \t\t  Omega_eff  \t\t  Omega_eff(gs_const) \t\t Omega_network \t\t Omega_network (with I->J) \t\t time(s)')
+
+print(mdm,'\t', omega_bseff, '\t', omega_bseffgsc, '\t',  omega_net, '\t', omega_netibs,'\t', tf-t0)
+
+
+fileout = open("tempr.dat", "w")
+fileout.write("%e \t ,  %e  \t ,  %e  \t ,  %e \t ,  %e    \n" %(mdm, omega_bseff, omega_bseffgsc, omega_net, omega_netibs) )
+
+fileout.close()
+
