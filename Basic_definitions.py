@@ -39,11 +39,14 @@ nS_Quintuplet = 5 # Quintuplet state
 ############################################################################ 
 
 Tt, sqrtg = np.loadtxt('Num_lists/sqrtgsT.csv', usecols = (0,1), delimiter = ',', unpack=True)
-#Tts, gs = np.loadtxt('dof/gstarsT.csv',usecols = (0,1),delimiter=',',unpack=True)
+Tts, gs = np.loadtxt('Num_lists/gstarsT.csv',usecols = (0,1),delimiter=',',unpack=True)
 
-sqrtg_interp = interpolate.interp1d(Tt, sqrtg, kind='linear')
-#interpgs = interp1d(Tts, gs, kind='linear')
+sqrt_gs_eff = interpolate.interp1d(Tt, sqrtg, kind='linear')
+gs_star = interpolate.interp1d(Tts, gs, kind='linear')
 
+
+def sqrt_gs(T):
+    return gs_star(T) / sqrt_gs_eff(T)
 
 ############################################################################
 

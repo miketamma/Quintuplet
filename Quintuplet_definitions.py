@@ -108,17 +108,17 @@ class Quintuplet_DM:
     ###############################
 
     def entropy(self, z):
-        return 2*pi**2/45 * ( sqrtg_interp(self.M/z)**2 ) * (self.M/z)**3
+        return 2*pi**2/45 * gs_star(self.M/z) * (self.M/z)**3
 
     def Hubble(self, z):
-        return 2 * re( sqrt( pi**3/45 * ( sqrtg_interp(self.M/z)**2 ) ) ) * self.M**2/(Mpl * z**2)
+        return 2 * re( sqrt( pi**3/45 ) ) * sqrt_gs(self.M/z) * self.M**2/(Mpl * z**2)
 
     ###############################
     # Equilibrium abundance for DM
     ###############################
 
     def Yeq(self, z):
-        pref = gx * 45 / ( 2 * pi**2 * (2 * pi)**(3/2) * sqrtg_interp(self.M/z)**2 )
+        pref = gx * 45 / ( 2 * pi**2 * (2 * pi)**(3/2) * gs_star(self.M/z) )
         return pref * K2_times_z2(z)
 
     ###############################
