@@ -155,6 +155,11 @@ class Quintuplet_BS(Quintuplet_DM):
         exponential = np.exp( - self.binding_energy_BS(z) * z )
         return pref_1 * pref_2 * exponential * self.bsf(z)
 
+    def Gamma_break_NoExp(self, z):
+        pref_1 = gx**2/(2 * self.gI) * self.M**3 * sigma0_prime(self.M)
+        pref_2 = (1/(z * 4 * pi))**(3/2)
+        return pref_1 * pref_2 * self.bsf(z)
+
     ###############################
     # Annihilation rates of BS
     ###############################
@@ -192,6 +197,8 @@ gf_list = [3240.0, 15625.0/48.0, 567.0/4.0, 405.0, 15625.0/384.0, 567.0/32.0, 1,
 # Gdec = [0.0, 0.0, 0.0, s2tw*A25*s2tw*A2MZ*mdm, s2tw*A25*s2tw*A2MZ*mdm, s2tw*A25*s2tw*A2MZ*mdm, 2.0*s2tw*A25*mdm, 1.3*s2tw*A25*mdm, 0.2*s2tw*A25*mdm]
 
 # BS_1s1 = Quintuplet_BS(10 * TeV, gI_list[0], nE_list[0], l_list[0], Isp_list[0], nS_Quint, BS_func_list[0], gf_list[0])
+
+# print(BS_1s1.gI)
 
 # print( BS_1s1.entropy(1e3) )
 # print( BS_1s1.Y_BS_eq(1e3) )
