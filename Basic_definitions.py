@@ -1,6 +1,7 @@
 import numpy as np
 from mpmath import *
 from scipy import integrate, interpolate
+from scipy.integrate import solve_ivp
 import time
 mp.dps = 25; mp.pretty = True
 ######################################
@@ -111,3 +112,18 @@ def K2_times_z2(z):
 
 def Kratio(z):
     return K1(z)/K2(z)
+
+
+
+############################################################################
+
+# Definie numerical Boltzmann ODE solver, n is the number of BS variables
+
+############################################################################
+
+def NDE_solver(Boltz, n):
+    y0 = np.concatenate( ([5e-3], np.full( n, 1.e-30) ) ) #np.full( n, 1.e-30)
+    teval = np.logspace(np.log10(3.5), 5.9, 100)
+    tspan=[3.0, 1.e6]
+    
+    return solve_ivp(Boltz, tspan, y0 = y0, method = 'Radau', t_eval = teval, atol=1.e-20)
