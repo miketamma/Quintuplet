@@ -2,6 +2,10 @@
 
 Precise calculation of the relic mass of the Dark Matter, assumed as being part of the 5 representation of the Standard Model SU(2) gauge group.
 
+If you use this code or its results in your work please cite: ...
+
+Useful references: "*Cosmological Implications of Dark Matter Bound States*", 1702.01141
+
 Packages needed:
 
 - SciPy
