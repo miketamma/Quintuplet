@@ -2,6 +2,14 @@
 
 Precise calculation of the relic mass of the Dark Matter, assumed as being part of the 5 representation of the Standard Model SU(2) gauge group.
 
+Packages needed:
+
+- SciPy
+- NumPy
+- mpmath
+- time
+- matplotlib (plotting not implemented yet, so not needed as of now)
+
 
 ## TL;DR
 
@@ -44,12 +52,47 @@ The thermal averages above are computed by the **Thermal_Averages.py** script. N
 
 The thermal averages above are computed by the **Thermal_Averages_bsf.py** script. Note that the final result is normalized by the 'reference cross section' σ<sub>0</sub><sup>'</sup>.
 
-In Num_lists folder there are the txt files for K1 and K2 (Bessel functions), computed with high precision, and the thermally averaged cross sections for s-wave production with Hulthen potential and bound state formation (BSF) for the states 1s1, 1s32 1s5, 2s1, 2s3, 2s5, 2p1, 2p3, 2p5
 
-Basic_definitions.py - contains constant definitions and import Bessel functions
+### Basic_definitions.py 
 
-Quintuplet_definitions.py - contains the Quintuplet_DM class definition
+Contains constant definitions, imports Bessel functions and d.o.f. tables and defines the basic function to compute Ω<sub>DM</sub> h<sup>2</sup>. 
 
-BoundStates_definitions.py - contains the Quintuplet_BS class definition
+It also defines the **NDE_solver** function, which gets as inputs the Boltzmann equations and the number of bound states included, and integrates the equations in the interval z ∈ [3, 10<sup>7</sup>], using the SciPy function 'solve_ivp' with the 'Radau' method. Initial values of the DM and BS yields are set to Y = 10<sup>-30</sup>.
 
-NDE_solver.py - contains the ODE solver function, and does the mass scan for different cases (IMPLEMENTED: Hulthen_free, Hulthen_1s_effective) 
+### Quintuplet_definitions.py
+
+Defines gauge boson mass with thermal corrections, and imports the thermally averaged DM cross sections
+
+Mainly, it defines the **Quintuplet_DM** class, which takes as input parameter only the DM mass, and initializes a series of functions relevant for the DM.
+
+
+### BoundStates_definitions.py 
+
+Similarly, it imports and defines bound states functions.
+
+The **Quintuplet_BS** inherits the **Quintuplet_DM** class, and defines additional functions for the BS properties. It takes the following list of inputs:
+
+[ M<sub>DM</sub>, g<sub>I</sub>, n, l, I, BSF function, Group factor constant ]
+
+### Free_Boltz_eqs.py
+
+### Hulthen_eff_Boltz_eqs.py
+
+### Hulthen_network_Boltz_eqs.py
+
+### BoundStates_definitions.py 
+
+### Results
+
+
+## ToDo List
+
+- Complete the current README file
+
+- Add possibility to decide the range of masses to scan
+
+- Add possibility to extract directly the thermal mass from the mass scan
+
+- Change output format file? Currently using .txt format to have a simple list to import in Mathematica and make plots
+
+- Implement the possibility to plot results directly from the python script
