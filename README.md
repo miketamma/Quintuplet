@@ -73,7 +73,7 @@ Similarly, it imports and defines bound states functions.
 
 The **Quintuplet_BS** inherits the **Quintuplet_DM** class, and defines additional functions for the BS properties. It takes the following list of inputs:
 
-[ M<sub>DM</sub>, g<sub>I</sub>, n, l, I, BSF function, Group factor constant ]
+[ M<sub>DM</sub>, g<sub>I</sub>, n, ℓ, I, BSF function, Group factor constant ]
 
 ### Free_Boltz_eqs.py
 
