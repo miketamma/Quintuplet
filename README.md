@@ -84,6 +84,7 @@ The **Quintuplet_BS** inherits the **Quintuplet_DM** class, and defines addition
 
 ### Results
 
+Output files are saved in this folder (currently only .txt files with the mass scans)
 
 ## ToDo List
 
