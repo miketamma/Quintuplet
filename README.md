@@ -5,7 +5,7 @@ Precise calculation of the relic mass of the Dark Matter, assumed as being part 
 
 ## TL;DR
 
-The final result can be obtained by simply running the 'Boltzmann_solver.py' script; it will ask as input the number of mass points to scan in the M$_{DM}$ ∈ [3,15] TeV interval, and which case to run (more details below). It outputs the list [M$_{DM}$, Ω$_{DM}$ h$^{2}$] as a .txt file and optionally it prints it on terminal.
+The final result can be obtained by simply running the 'Boltzmann_solver.py' script; it will ask as input the number of mass points to scan in the M<sub>DM</sub> ∈ [3,15] TeV interval, and which case to run (more details below). It outputs the list [M<sub>DM</sub>, Ω<sub>DM</sub> h<sup>2</sup> as a .txt file and optionally it prints it on terminal.
 
 ## Structure of the code
 
@@ -16,7 +16,7 @@ The code is structured in a subset of scripts that contain the different definit
 
 This folder contains all the necessary pretabulated quantities as .txt files. Scripts to (re)compute these tables are provided.
 
-- 'K1_hiprec.txt' and 'K2_hiprec.txt' contain the modified Bessel functions of first and second kind, K$_{1}$ and K$_{2}$, as function of 
+- 'K1_hiprec.txt' and 'K2_hiprec.txt' contain the modified Bessel functions of first and second kind, K<sub>1</sub> and K<sub>2</sub>, as function of 
 -
 -
 
