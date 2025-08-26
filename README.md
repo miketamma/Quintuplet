@@ -13,7 +13,7 @@ Packages needed:
 
 ## TL;DR
 
-The final result can be obtained by simply running the 'Boltzmann_solver.py' script; it will ask as input the number of mass points to scan in the M<sub>DM</sub> ∈ [3,15] TeV interval, and which case to run (more details below). It outputs the list [M<sub>DM</sub>, Ω<sub>DM</sub> h<sup>2</sup>] as a .txt file and optionally it prints it on terminal.
+The final result can be obtained by simply running the 'Boltzmann_Solver.py' script; it will ask as input the number of mass points to scan in the M<sub>DM</sub> ∈ [3,15] TeV interval, and which case to run (more details below). It outputs the list [M<sub>DM</sub>, Ω<sub>DM</sub> h<sup>2</sup>] as a .txt file and optionally it prints it on terminal.
 
 ## Structure of the code
 
@@ -28,6 +28,7 @@ These are described below:
 - **Free_Boltz_eqs.py** (script)
 - **Hulthen_eff_Boltz_eqs.py** (script)
 - **Hulthen_network_Boltz_eqs.py** (script)
+- **Boltzmann_Solver.py** (script)
 - **Results** (folder)
 
 
@@ -86,9 +87,35 @@ The **Quintuplet_BS** inherits the **Quintuplet_DM** class, and defines addition
 
 *Add description*
 
+### Boltzmann_Solver.py
+
+This scripts takes as input all the previous ones and runs the required computations.
+
+First, it asks as input the number of mass to scan. The mass range is fixed to be [3, 15] TeV (*might change in the future, not a priority now*).
+
+Second, it asks for the case to run. The implemented cases are:
+
+    1. Tree level (No Sommerfeld enhancement) (~0.6 s/mass)
+
+    2. Sommerfeld enhancement with Hulthen potential (~1.0 s/mass)
+
+    3. Effective Boltzmann equation with 1s bound states (~1.8 s/mass)
+
+    4. Effective Boltzmann equation with 1s, 2s, 2p bound states (~3.5 s/mass)
+
+    5. Network of Boltzmann equations with 1s1 bound states (~3.8 s/mass)
+
+    6. Network of Boltzmann equations with 1s bound states (~8.6 s/mass)
+
+    7. Network of Boltzmann equations with 1s, 2s, 2p bound states (~30 s/mass)
+
+    0. Solve all of them (could take some time)
+
+Finally, it asks if to write the results on terminal or not.
+
 ### Results
 
-Output files are saved in this folder (currently only .txt files with the mass scans)
+Output files are saved in this folder (currently only .txt files with the mass scans). 
 
 ## ToDo List
 
