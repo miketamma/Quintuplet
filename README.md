@@ -76,11 +76,15 @@ The **Quintuplet_BS** inherits the **Quintuplet_DM** class, and defines addition
 
 ### Free_Boltz_eqs.py
 
+*Add description*
+
 ### Hulthen_eff_Boltz_eqs.py
+
+*Add description*
 
 ### Hulthen_network_Boltz_eqs.py
 
-### BoundStates_definitions.py 
+*Add description*
 
 ### Results
 
