@@ -122,8 +122,8 @@ def Kratio(z):
 ############################################################################
 
 def NDE_solver(Boltz, n):
-    y0 = np.concatenate( ([5e-3], np.full( n, 1.e-30) ) ) #np.full( n, 1.e-30)
-    teval = np.logspace(np.log10(3.5), 5.9, 100)
-    tspan=[3.0, 1.e6]
+    y0 = np.concatenate( ([1.e-30], np.full( n, 1.e-30) ) ) #np.full( n, 1.e-30)
+    teval = np.logspace(np.log10(3.5), 6.9, 100)
+    tspan=[3.0, 1.e7]
     
     return solve_ivp(Boltz, tspan, y0 = y0, method = 'Radau', t_eval = teval, atol=1.e-20)

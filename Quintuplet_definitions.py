@@ -97,7 +97,7 @@ class Quintuplet_DM:
         return [6,5,3]
 
     ###############################
-    # epsilon factor in Hulther potential
+    # epsilon factor in Hulthen potential
     ###############################
 
     def h_eps(self, z, i):
@@ -118,8 +118,8 @@ class Quintuplet_DM:
     ###############################
 
     def Yeq(self, z):
-        pref = gx * 45 / ( 2 * pi**2 * (2 * pi)**(3/2) * gs_star(self.M/z) )
-        return pref * K2_times_z2(z)
+        pref = gx * 45 / ( 4 * (pi**4) * gs_star(self.M/z) )#( 2 * pi**2 * (2 * pi)**(3/2) * gs_star(self.M/z) )
+        return pref * K2_times_z2(z) 
 
     ###############################
     # Production cross section with NO Sommerfeld enhancement
@@ -137,8 +137,8 @@ class Quintuplet_DM:
     ###############################
 
     def sv_production_Somm_Hulthen(self, z):
-        S1 = 16/69 * SommHulthen_S1(self.h_eps(z, 0), z)
-        S3 = 25/69 * SommHulthen_S3(self.h_eps(z, 1), z)
-        S5 = 28/69 * SommHulthen_S5(self.h_eps(z, 2), z)
+        S1 = 16.0/69.0 * SommHulthen_S1(self.h_eps(z, 0), z)
+        S3 = 25.0/69.0 * SommHulthen_S3(self.h_eps(z, 1), z)
+        S5 = 28.0/69.0 * SommHulthen_S5(self.h_eps(z, 2), z)
         return sigma0(self.M) * (S1 + S3 + S5)
 

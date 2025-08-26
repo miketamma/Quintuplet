@@ -17,15 +17,15 @@ mp.dps = 25; mp.pretty = True
 
 ############################################################################
 
-def Yratio(BS, M, z):
+# # def Yratio(BS, M, z):
 
-    prefactor = ( pi**(5/2) ) * 32/45
+# #     prefactor = ( pi**(5/2) ) * 32/45
 
-    prefactor_g = BS.gI * gs_star(M/z)/( gx**2 )
+# #     prefactor_g = BS.gI * gs_star(M/z)/( gx**2 )
 
-    factor_z = ( np.exp( z * BS.binding_energy_BS(z) ) )/( z**(3/2) )
+# #     factor_z = ( np.exp( z * BS.binding_energy_BS(z) ) )/( z**(3/2) )
 
-    return prefactor * prefactor_g * factor_z
+# #     return prefactor * prefactor_g * factor_z
 
 # def Yratio(BS, M, z):
 
@@ -37,9 +37,29 @@ def Yratio(BS, M, z):
 
 #     return factor_z/( prefactor * prefactor_g )
 
+def Yratio(BS, M, z):
+
+    prefactor = ( pi**(7/2) ) * 16/45
+
+    prefactor_g = BS.gI * gs_star(M/z)/( gx**2 )
+
+    factor_z = ( np.exp( z * BS.binding_energy_BS(z) ) )/( z**(3/2) )
+
+    return prefactor * prefactor_g * factor_z
+
+def InverseYratio(BS, M, z):
+
+    # prefactor = ( pi**(5/2) ) * 32/45
+
+    # prefactor_g = BS.gI * gs_star(M/z)/( gx**2 )
+
+    # factor_z = ( np.exp( - z * BS.binding_energy_BS(z) ) ) * ( z**(3/2) )
+
+    return 1/Yratio(BS, M, z)
+
 def Yratio_NoExp(BS, M, z):
 
-    prefactor = ( pi**(5/2) ) * 32/45
+    prefactor = ( pi**(7/2) ) * 16/45
 
     prefactor_g = BS.gI * gs_star(M/z)/( gx**2 )
 
@@ -73,7 +93,7 @@ def Boltzmann_Hulthen_Network_1s1(DM, BS, z, Y):
     prefactor_I = 1/( z * DM.Hubble(z) )
 
     dYdz_DM_1 = ( Y_DM**2 - DM.Yeq(z)**2 ) * DM.sv_production_Somm_Hulthen(z)
-    dYdz_DM_2 = sigma0_prime(M) * BS.bsf(z) * ( Y_DM**2 - Y_1s1/Yratio(BS, M, z) )
+    dYdz_DM_2 = sigma0_prime(M) * BS.bsf(z) * ( Y_DM**2 - Y_1s1 * InverseYratio(BS, M, z) )
 
     dYdz_DM = prefactor_DM * ( dYdz_DM_1 + dYdz_DM_2 )
 
@@ -142,7 +162,7 @@ def Boltzmann_Hulthen_Network_1s(DM, BS_list, z, Y):
     prefactor_DM = - DM.entropy(z)/( z * DM.Hubble(z) )
 
     dYdz_DM_1 = ( Y_DM**2 - DM.Yeq(z)**2 ) * DM.sv_production_Somm_Hulthen(z)
-    dYdz_DM_2 = sigma0_prime(M) * np.sum( [ BS_list[i].bsf(z) * ( Y_DM**2 - Y_1s[i]/Yratio(BS_list[i], M, z) ) for i in range(len(BS_list)) ] )
+    dYdz_DM_2 = sigma0_prime(M) * np.sum( [ BS_list[i].bsf(z) * ( Y_DM**2 - Y_1s[i] * InverseYratio(BS_list[i], M, z) ) for i in range(len(BS_list)) ] )
 
     dYdz_DM = prefactor_DM * ( dYdz_DM_1 + dYdz_DM_2 )
 
@@ -232,7 +252,7 @@ def Boltzmann_Hulthen_Network_1s2s2p(DM, BS_list, z, Y):
     prefactor_DM = - DM.entropy(z)/( z * DM.Hubble(z) )
 
     dYdz_DM_1 = ( Y_DM**2 - DM.Yeq(z)**2 ) * DM.sv_production_Somm_Hulthen(z)
-    dYdz_DM_2 = sigma0_prime(M) * np.sum( [ BS_list[i].bsf(z) * ( Y_DM**2 - Y_BS[i]/Yratio(BS_list[i], M, z) ) for i in range(len(BS_list)) ] )
+    dYdz_DM_2 = sigma0_prime(M) * np.sum( [ BS_list[i].bsf(z) * ( Y_DM**2 - Y_BS[i] * InverseYratio(BS_list[i], M, z) ) for i in range(len(BS_list)) ] )
 
     dYdz_DM = prefactor_DM * ( dYdz_DM_1 + dYdz_DM_2 )
 
@@ -287,7 +307,7 @@ def do_scan_Boltzmann_Hulthen_Network_1s2s2p(M_DM_scan, print_results):
             if print_results == "y":
                 print( [ M_DM, omega_solution ] )
             else: continue
-        
+
         except IndexError:
             pass
 

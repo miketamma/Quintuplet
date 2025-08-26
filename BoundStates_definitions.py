@@ -153,12 +153,12 @@ class Quintuplet_BS(Quintuplet_DM):
         pref_1 = gx**2/(2 * self.gI) * self.M**3 * sigma0_prime(self.M)
         pref_2 = (1/(z * 4 * pi))**(3/2)
         exponential = np.exp( - self.binding_energy_BS(z) * z )
-        return pref_1 * pref_2 * exponential * self.bsf(z)
+        return pref_1 * pref_2 * exponential * self.bsf(z) #* sigma0_prime(self.M)
 
     def Gamma_break_NoExp(self, z):
         pref_1 = gx**2/(2 * self.gI) * self.M**3 * sigma0_prime(self.M)
         pref_2 = (1/(z * 4 * pi))**(3/2)
-        return pref_1 * pref_2 * self.bsf(z)
+        return pref_1 * pref_2 * self.bsf(z) #* sigma0_prime(self.M)
 
     ###############################
     # Annihilation rates of BS
