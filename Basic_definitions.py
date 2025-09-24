@@ -20,10 +20,9 @@ gx = 10 # Quintuplet dof
 gstarSS = 106.75 # SM dof
 Sqrtgs = sqrt(106.75) # sqrt of SM dof
 Mpl = 1.22e19 # Plank mass in GeV
-alpha = 0.0313 # alpha EW
+alpha = 0.0333949 #0.0313 # alpha EW
 a22 = alpha*alpha # alpha^2 EW
-A2MZ = 0.0313 # alpha EW
-A25 = A2MZ**5.0 # alpha^5 EW (useful for ann gamma)
+A25 = alpha**5.0 # alpha^5 EW (useful for ann gamma)
 Tc = 155.0 # Critical temperature for SM
 MW = 80.38 # W mass in GeV
 s2tw = 1- (80.38/91.18)**2.0 # sin^2 of weak mixing angle
@@ -57,7 +56,7 @@ def sqrt_gs(T):
 
 
 def Omega_DM(h, Y_DM_inf, M):
-    return (0.11/h**2) * (Y_DM_inf * M)/(0.4 * eV)
+    return (0.12/h**2) * (Y_DM_inf * M)/(0.44 * eV)
 
 
 ############################################################################
