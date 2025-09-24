@@ -104,7 +104,7 @@ class Quintuplet_BS(Quintuplet_DM):
 
     def alpha_eff(self):
         lambda_eff = (2 * self.nS**2 - 1 - self.Isp**2)/8
-        return mpf(alpha*lambda_eff)
+        return mpf(alpha * lambda_eff)
 
 
     ###############################
