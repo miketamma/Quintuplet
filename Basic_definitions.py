@@ -56,7 +56,7 @@ def sqrt_gs(T):
 
 
 def Omega_DM(h, Y_DM_inf, M):
-    return (0.12/h**2) * (Y_DM_inf * M)/(0.44 * eV)
+    return (Y_DM_inf * M)/(0.44 * eV) #(0.12/h**2) *
 
 
 ############################################################################
@@ -126,3 +126,5 @@ def NDE_solver(Boltz, n):
     tspan=[3.0, 1.e7]
     
     return solve_ivp(Boltz, tspan, y0 = y0, method = 'Radau', t_eval = teval, atol=1.e-20)
+
+
