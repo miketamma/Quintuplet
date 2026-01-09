@@ -28,11 +28,11 @@ def MWTSU2(M, z):
 
 ############################################################################ 
 
-def sigma0(M):
-  return 207.0/20.0 * pi * a22/M**2.0 
+def sigma0(mu, M):
+  return 207.0/20.0 * pi * ( alpha2(mu)/M )**2.0 
 
-def sigma0_prime(M):
-  return pi * a22/M**2.0 
+def sigma0_prime(mu, M):
+  return pi * ( alpha2(mu)/M )**2.0 
 
 
 ############################################################################
@@ -101,7 +101,7 @@ class Quintuplet_DM:
     ###############################
 
     def h_eps(self, z, i):
-        return kappa * MWTSU2(self.M, z)/( alpha * self.lam()[i] * self.M )
+        return kappa * MWTSU2(self.M, z)/( alpha2(2*self.M) * self.lam()[i] * self.M )
 
     ###############################
     # entropy and Hubble for DM
@@ -129,7 +129,7 @@ class Quintuplet_DM:
     def sv_production_NoSomm(self, z):
         S1 = NoSomm_S1(self.h_eps(z, 0), z)
         
-        return sigma0(self.M) * S1
+        return sigma0(2*self.M, self.M) * S1
 
 
     ###############################
@@ -140,5 +140,5 @@ class Quintuplet_DM:
         S1 = 16.0/69.0 * SommHulthen_S1(self.h_eps(z, 0), z)
         S3 = 25.0/69.0 * SommHulthen_S3(self.h_eps(z, 1), z)
         S5 = 28.0/69.0 * SommHulthen_S5(self.h_eps(z, 2), z)
-        return sigma0(self.M) * (S1 + S3 + S5)
+        return sigma0(2*self.M, self.M) * (S1 + S3 + S5)
 

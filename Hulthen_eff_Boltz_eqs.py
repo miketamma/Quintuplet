@@ -20,11 +20,11 @@ mp.dps = 25; mp.pretty = True
 def BS_eff(BS, M, z):
 
     first_term = 1/BS.bsf(z)
-    second_term_1 = gx**2 * sigma0_prime(M) * M**2/( 2 * BS.gI * BS.gamma_ann() )
+    second_term_1 = gx**2 * sigma0_prime(2*M, M) * M**2/( 2 * BS.gI * BS.gamma_ann() )
     second_term_2 = ( 1 / (4*pi*z) )**(3/2)
     second_term_3 = np.exp( - z * BS.binding_energy_BS(z) )
 
-    return sigma0_prime(M) * 1/(first_term + second_term_1 * second_term_2 * second_term_3)
+    return sigma0_prime(2*M, M) * 1/(first_term + second_term_1 * second_term_2 * second_term_3)
 
 
 def Boltzmann_Hulthen_effective(DM, BS_list, z, Y):

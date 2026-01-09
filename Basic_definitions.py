@@ -9,6 +9,20 @@ mp.dps = 25; mp.pretty = True
 
 ############################################################################
 
+# Import alpha2 running list and interpolate
+
+############################################################################ 
+
+alpha2_running_list = np.loadtxt('Num_lists/alpha2_running.txt')
+
+alpha2_running = interpolate.interp1d( alpha2_running_list[:, 0], alpha2_running_list[:, 1], kind='linear')
+
+
+def alpha2(mu):
+    return alpha2_running(mu)
+
+############################################################################
+
 # Define numerical constants
 
 ############################################################################ 
@@ -25,6 +39,7 @@ a22 = alpha*alpha # alpha^2 EW
 A25 = alpha**5.0 # alpha^5 EW (useful for ann gamma)
 Tc = 155.0 # Critical temperature for SM
 MW = 80.38 # W mass in GeV
+MZ = 91.188 # Z mass in GeV
 s2tw = 1- (80.38/91.18)**2.0 # sin^2 of weak mixing angle
 
 kappa = 1.74 # Hulthen factor 

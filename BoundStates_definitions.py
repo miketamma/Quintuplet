@@ -81,8 +81,8 @@ def BSF_2s5_TA(z):
 # # epsilon factor in Hulthen potential
 # ############################### 
 
-def Hulthen_epsilon(M, z, Isp, nS):
-    return kappa * MWTSU2(M, z)/( alpha_eff(Isp, nS) * M )
+# def Hulthen_epsilon(M, z, Isp, nS):
+#     return kappa * MWTSU2(M, z)/( alpha_eff(Isp, nS) * M )
 
 class Quintuplet_BS(Quintuplet_DM):
     """ Set of functions for the Bound States of Quintuplet DM """
@@ -102,17 +102,26 @@ class Quintuplet_BS(Quintuplet_DM):
     # Effective couplings of BS
     ###############################
 
-    def alpha_eff(self):
-        lambda_eff = (2 * self.nS**2 - 1 - self.Isp**2)/8
-        return mpf(alpha * lambda_eff)
+    def lambda_eff(self):
+        return (2 * self.nS**2 - 1 - self.Isp**2)/8
+
+    def alpha_eff_BSF(self):
+        return self.lambda_eff() * alpha2( self.lambda_eff() * alpha2(MZ) * self.M )
+
+    def alpha_eff_BE(self):
+        return self.lambda_eff() * alpha2( ( self.lambda_eff() * alpha2(MZ) )**2 * self.M )
+
+    # def alpha_eff(self, mu):
+    #     lambda_eff = (2 * self.nS**2 - 1 - self.Isp**2)/8
+    #     return mpf(alpha2(mu) * lambda_eff)
 
 
     ###############################
     # epsilon factor in Hulthen potential
     ############################### 
 
-    def Hulthen_epsilon(self, z):
-        return kappa * MWTSU2(self.M, z)/( self.alpha_eff() * self.M )
+    def Hulthen_epsilon(self, alpha, z):
+        return kappa * MWTSU2(self.M, z)/( alpha() * self.M )
 
 
     ###############################
@@ -120,8 +129,8 @@ class Quintuplet_BS(Quintuplet_DM):
     ###############################
 
     def binding_energy_BS(self, z):
-        prefactor = self.alpha_eff()**2/(4 * self.nE**2)
-        H_epsilon = self.Hulthen_epsilon(z)
+        prefactor = self.alpha_eff_BE()**2/(4 * self.nE**2)
+        H_epsilon = self.Hulthen_epsilon(self.alpha_eff_BE, z)
         corrections = 1 - self.nE**2 * H_epsilon - 0.53 * self.nE**2 * H_epsilon**2 * self.l * (self.l+1)
         return float(prefactor * corrections**2)
 
@@ -150,13 +159,13 @@ class Quintuplet_BS(Quintuplet_DM):
     ###############################
 
     def Gamma_break(self, z):
-        pref_1 = gx**2/(2 * self.gI) * self.M**3 * sigma0_prime(self.M)
+        pref_1 = gx**2/(2 * self.gI) * self.M**3 * sigma0_prime(( self.lambda_eff(self) * alpha2(MZ) ) * self.M, self.M)
         pref_2 = (1/(z * 4 * pi))**(3/2)
         exponential = np.exp( - self.binding_energy_BS(z) * z )
         return pref_1 * pref_2 * exponential * self.bsf(z) #* sigma0_prime(self.M)
 
     def Gamma_break_NoExp(self, z):
-        pref_1 = gx**2/(2 * self.gI) * self.M**3 * sigma0_prime(self.M)
+        pref_1 = gx**2/(2 * self.gI) * self.M**3 * sigma0_prime(( self.lambda_eff(self) * alpha2(MZ) ) * self.M, self.M)
         pref_2 = (1/(z * 4 * pi))**(3/2)
         return pref_1 * pref_2 * self.bsf(z) #* sigma0_prime(self.M)
 
@@ -168,7 +177,7 @@ class Quintuplet_BS(Quintuplet_DM):
         return self.gf * A25
 
     def Gamma_ann_Hulthen_TA(self, z):
-        correction = 1 + self.Hulthen_epsilon(z)**2
+        correction = 1 + self.Hulthen_epsilon(alpha_eff_BE, z)**2
         return self.gamma_ann() * self.M * correction * Kratio(z)
 
     def gI_ann_Hulthen(self, z):
