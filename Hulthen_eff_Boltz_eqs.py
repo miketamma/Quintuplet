@@ -2,6 +2,7 @@ import numpy as np
 import sys
 from mpmath import *
 from scipy.integrate import solve_ivp
+from scipy.optimize import fsolve
 import time
 from Basic_definitions import *
 from Quintuplet_definitions import *
@@ -46,7 +47,7 @@ def Boltzmann_Hulthen_effective(DM, BS_list, z, Y):
 
 ############################################################################ 
 
-def do_scan_Boltzmann_Hulthen_1s_effective(M_DM_scan, print_results):
+def do_scan_Boltzmann_Hulthen_1s_effective(M_DM_scan):
 
     Omega_Boltzmann_Hulthen_1s_effective = []
 
@@ -86,9 +87,9 @@ def do_scan_Boltzmann_Hulthen_1s_effective(M_DM_scan, print_results):
 
 
 
-def do_scan_Boltzmann_Hulthen_1s2s2p_effective(M_DM_scan, print_results):
+def do_scan_Boltzmann_Hulthen_1s2s2p_effective(M_DM_scan):
 
-    Omega_Boltzmann_Hulthen_1s2s2p_effective = []
+    Omega_List = []
 
     for M_DM in M_DM_scan:
         
@@ -116,10 +117,18 @@ def do_scan_Boltzmann_Hulthen_1s2s2p_effective(M_DM_scan, print_results):
         
         omega_solution = Omega_DM(1.0, solution.y[0][-1], M_DM)
 
-        Omega_Boltzmann_Hulthen_1s2s2p_effective.append([M_DM, omega_solution])
+        Omega_List.append([M_DM, omega_solution])
 
-        if print_results == "y":
-            print( [ M_DM, omega_solution ] )
-        else: continue
+        # if print_results == "y":
+        #     print( [ M_DM, omega_solution ] )
+        # else: continue
 
-    np.savetxt('./Results/Omega_Boltzmann_Hulthen_1s2s2p_effective.txt', Omega_Boltzmann_Hulthen_1s2s2p_effective)
+    Omega_List_AsArr = np.asarray(Omega_List)
+
+    OB_interp = interpolate.interp1d( Omega_List_AsArr[:, 0], Omega_List_AsArr[:, 1] - 1. )
+
+    Thermal_Mass = round( fsolve(OB_interp, 13. * TeV, xtol = 1e-6, maxfev = 200)[0]/TeV, 3)
+
+    print( 'The thermal relic mass is M_DM = ', Thermal_Mass, ' TeV' )
+
+    np.savetxt('./Results/Omega_Boltzmann_Hulthen_1s2s2p_effective.txt', Omega_List)
