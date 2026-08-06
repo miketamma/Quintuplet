@@ -85,16 +85,17 @@ def BSF_2s5_TA(z):
 #     return kappa * MWTSU2(M, z)/( alpha_eff(Isp, nS) * M )
 
 class Quintuplet_BS(Quintuplet_DM):
-    """ Set of functions for the Bound States of Quintuplet DM """
+    """Properties and reaction rates of a quintuplet-DM bound state."""
 
     def __init__(self, DarkMatter_Mass, gI, nE, l, Isp, nS, BoundStateFormation_xsec, group_factor):
-        self.M = DarkMatter_Mass
+        """Store the bound-state quantum numbers and tabulated BSF rate."""
+        super().__init__(DarkMatter_Mass)
         self.gI = gI
         self.nE = nE
         self.l = l
         self.Isp = Isp
         self.nS = nS
-        self.bsf = BoundStateFormation_xsec
+        self._bsf_table = BoundStateFormation_xsec
         self.gf = group_factor
         Quintuplet_DM.__init__(self, DarkMatter_Mass)
 
@@ -103,25 +104,37 @@ class Quintuplet_BS(Quintuplet_DM):
     ###############################
 
     def lambda_eff(self):
-        return (2 * self.nS**2 - 1 - self.Isp**2)/8
+        """Return the attractive-potential group coefficient."""
+        return (2 * self.nS**2 - 1 - self.Isp**2) / 8
 
     def alpha_eff_BSF(self):
-        return self.lambda_eff() * alpha2( self.lambda_eff() * alpha2(MZ) * self.M )
+        """Return the effective coupling at the bound-state formation scale."""
+        scale = self.lambda_eff() * alpha2(MZ) * self.M
+        return self.lambda_eff() * alpha2(scale)
 
     def alpha_eff_BE(self):
-        return self.lambda_eff() * alpha2( ( self.lambda_eff() * alpha2(MZ) )**2 * self.M )
-
-    # def alpha_eff(self, mu):
-    #     lambda_eff = (2 * self.nS**2 - 1 - self.Isp**2)/8
-    #     return mpf(alpha2(mu) * lambda_eff)
+        """Return the effective coupling at the binding-energy scale."""
+        scale = (self.lambda_eff() * alpha2(MZ))**2 * self.M
+        return self.lambda_eff() * alpha2(scale)
 
 
     ###############################
-    # epsilon factor in Hulthen potential
+    # Screening in Hulthen potential
     ############################### 
 
     def Hulthen_epsilon(self, alpha, z):
+        """Return the dimensionless screening parameter of the Hulthén potential."""
         return kappa * MWTSU2(self.M, z)/( alpha() * self.M )
+
+    def screening_correction(self, z):
+        """Return the finite-range correction entering the binding energy."""
+        epsilon = self.Hulthen_epsilon(self.alpha_eff_BE, z)
+
+        return 1 - self.nE**2 * epsilon - 0.53 * self.nE**2 * epsilon**2 * self.l * (self.l+1)
+
+    def is_bound(self, z):
+        """Return whether the screened potential supports this bound state."""
+        return self.screening_correction(z) > 0
 
 
     ###############################
@@ -129,61 +142,84 @@ class Quintuplet_BS(Quintuplet_DM):
     ###############################
 
     def binding_energy_BS(self, z):
-        prefactor = self.alpha_eff_BE()**2/(4 * self.nE**2)
-        H_epsilon = self.Hulthen_epsilon(self.alpha_eff_BE, z)
-        corrections = 1 - self.nE**2 * H_epsilon - 0.53 * self.nE**2 * H_epsilon**2 * self.l * (self.l+1)
-        return float(prefactor * corrections**2)
+        """Return the binding energy divided by the constituent DM mass."""
+        correction = self.screening_correction(z)
 
+        # The state has dissolved when the screening correction is non-positive.
+        if correction <= 0:
+            return 0.0
 
-    ###############################
-    # BS number density
-    ###############################
+        coulomb_energy = self.alpha_eff_BE()**2 / (4 * self.nE**2)
+        return float(coulomb_energy * correction**2)
+
+    def bsf(self, z):
+        """Return the tabulated BSF factor, or zero if the state is unbound."""
+        if not self.is_bound(z):
+            return 0.0
+
+        return self._bsf_table(z)
+
 
 
     def n_BS_eq(self, z):
+        """Return the equilibrium number density of the bound state."""
+        if not self.is_bound(z):
+            return mpf("0.0")
         prefactor = self.gI * (2 * self.M**2/(2 * z * pi))**(3/2)
         exponential = np.exp( -(2 - self.binding_energy_BS(z)) * z )
         return mpf(prefactor * exponential)
 
-
-    ###############################
-    # BS abundance
-    ###############################
-
-
     def Y_BS_eq(self, z):
-        return self.n_BS_eq(z)/self.entropy(z)
-
-    ###############################
-    # Breaking rates of BS
-    ###############################
+        """Return the equilibrium bound-state yield n_BS/s."""
+        return self.n_BS_eq(z) / self.entropy(z)
 
     def Gamma_break(self, z):
-        pref_1 = gx**2/(2 * self.gI) * self.M**3 * sigma0_prime(( self.lambda_eff(self) * alpha2(MZ) ) * self.M, self.M)
-        pref_2 = (1/(z * 4 * pi))**(3/2)
+        """Return the thermally suppressed bound-state dissociation rate."""
+        if not self.is_bound(z):
+            return 0.0
+
+        scale = self.lambda_eff() * alpha2(MZ) * self.M
+        prefactor = gx**2/(2 * self.gI) * self.M**3 * sigma0_prime( scale, self.M)
+        thermal_factor = (1/(z * 4 * pi))**(3/2)
         exponential = np.exp( - self.binding_energy_BS(z) * z )
-        return pref_1 * pref_2 * exponential * self.bsf(z) #* sigma0_prime(self.M)
+        return prefactor * thermal_factor * exponential * self.bsf(z) 
 
     def Gamma_break_NoExp(self, z):
-        pref_1 = gx**2/(2 * self.gI) * self.M**3 * sigma0_prime(( self.lambda_eff(self) * alpha2(MZ) ) * self.M, self.M)
-        pref_2 = (1/(z * 4 * pi))**(3/2)
-        return pref_1 * pref_2 * self.bsf(z) #* sigma0_prime(self.M)
+        """Return the dissociation rate without its Boltzmann exponential."""
+        if not self.is_bound(z):
+            return 0.0
+
+        scale = self.lambda_eff() * alpha2(MZ) * self.M
+
+        prefactor = gx**2/(2 * self.gI) * self.M**3 * sigma0_prime(( self.lambda_eff(self) * alpha2(MZ) ) * self.M, self.M)
+        thermal_factor = (1/(z * 4 * pi))**(3/2)
+        return prefactor * thermal_factor * self.bsf(z)
 
     ###############################
     # Annihilation rates of BS
     ###############################
 
     def gamma_ann(self):
+        """Return the dimensionless short-distance annihilation coefficient."""
         return self.gf * A25
 
     def Gamma_ann_Hulthen_TA(self, z):
-        correction = 1 + self.Hulthen_epsilon(alpha_eff_BE, z)**2
-        return self.gamma_ann() * self.M * correction * Kratio(z)
+        """Return the thermally averaged bound-state annihilation rate."""
+        if not self.is_bound(z):
+            return 0.0
+
+        epsilon = self.Hulthen_epsilon( self.alpha_eff_BE, z)
+        hulthen_correction = 1 + epsilon**2
+        
+        return self.gamma_ann() * self.M * hulthen_correction * Kratio(z)
 
     def gI_ann_Hulthen(self, z):
+        """Return the equilibrium annihilation reaction density."""
+        if not self.is_bound(z):
+            return 0.0
         prefactor = (2 * self.M**2/(2 * pi * z) )**(3/2)
-        expon = np.exp( -(2 - a22/2) * z )
-        return prefactor * expon * self.Gamma_ann_Hulthen_TA(z) 
+        exponential = np.exp( -(2 - a22/2) * z )
+        return prefactor * exponential * self.Gamma_ann_Hulthen_TA(z) 
 
 
 

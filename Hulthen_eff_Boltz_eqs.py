@@ -20,7 +20,12 @@ mp.dps = 25; mp.pretty = True
 
 def BS_eff(BS, M, z):
 
-    first_term = 1/BS.bsf(z)
+    if not BS.is_bound(z):
+        return 0.0
+
+    bsf = BS.bsf(z)
+
+    first_term = 1 / bsf
     second_term_1 = gx**2 * sigma0_prime(2*M, M) * M**2/( 2 * BS.gI * BS.gamma_ann() )
     second_term_2 = ( 1 / (4*pi*z) )**(3/2)
     second_term_3 = np.exp( - z * BS.binding_energy_BS(z) )
@@ -67,7 +72,7 @@ def do_scan_Boltzmann_Hulthen_1s_effective(M_DM_scan):
 
         solution = NDE_solver(bb, 0)
         
-        omega_solution = Omega_DM(1.0, solution.y[0][-1], M_DM)
+        omega_solution = relic_fraction(solution.y[0, -1], M_DM)
 
         Omega_Boltzmann_Hulthen_1s_effective.append([M_DM, omega_solution])
 
@@ -115,13 +120,13 @@ def do_scan_Boltzmann_Hulthen_1s2s2p_effective(M_DM_scan):
 
         solution = NDE_solver(bb, 0)
         
-        omega_solution = Omega_DM(1.0, solution.y[0][-1], M_DM)
+        omega_solution = relic_fraction(solution.y[0, -1], M_DM)
 
         Omega_List.append([M_DM, omega_solution])
 
-        # if print_results == "y":
-        #     print( [ M_DM, omega_solution ] )
-        # else: continue
+        if print_results == "y":
+            print( [ M_DM, omega_solution ] )
+        else: continue
 
     Omega_List_AsArr = np.asarray(Omega_List)
 

@@ -79,7 +79,7 @@ start = time.time()
 
 if which_case == 0:
     # Scan with free Boltzmann equation
-    do_scan_Boltzmann_Tree(M_DM_scan, print_results)
+    do_scan_Boltzmann_Tree(M_DM_scan, print_results) 
     # Scan with free Boltzmann equation, using Hulthen potential
     do_scan_Boltzmann_Hulthen_free(M_DM_scan, print_results)
     # Scan with effective Boltzmann equation, using all 1s BS

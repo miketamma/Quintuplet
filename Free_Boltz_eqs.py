@@ -36,7 +36,7 @@ def do_scan_Boltzmann_Tree(M_DM_scan, print_results):
 
         solution = NDE_solver(bb, 0)
 
-        omega_solution = Omega_DM(1.0, solution.y[0][-1], M_DM)
+        omega_solution = relic_fraction(solution.y[0, -1], M_DM)
 
         Omega_Boltzmann_Tree.append([M_DM, omega_solution])
 
@@ -75,7 +75,7 @@ def do_scan_Boltzmann_Hulthen_free(M_DM_scan, print_results):
 
         solution = NDE_solver(bb, 0)
 
-        omega_solution = Omega_DM(1.0, solution.y[0][-1], M_DM)
+        omega_solution = relic_fraction(solution.y[0, -1], M_DM)
 
         Omega_Boltzmann_Hulthen_free.append([M_DM, omega_solution])
 

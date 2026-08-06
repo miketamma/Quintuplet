@@ -93,7 +93,7 @@ def Boltzmann_Hulthen_Network_1s1(DM, BS, z, Y):
     prefactor_I = 1/( z * DM.Hubble(z) )
 
     dYdz_DM_1 = ( Y_DM**2 - DM.Yeq(z)**2 ) * DM.sv_production_Somm_Hulthen(z)
-    dYdz_DM_2 = sigma0_prime(M) * BS.bsf(z) * ( Y_DM**2 - Y_1s1 * InverseYratio(BS, M, z) )
+    dYdz_DM_2 = sigma0_prime(2*M, M) * BS.bsf(z) * ( Y_DM**2 - Y_1s1 * InverseYratio(BS, M, z) )
 
     dYdz_DM = prefactor_DM * ( dYdz_DM_1 + dYdz_DM_2 )
 
@@ -126,7 +126,7 @@ def do_scan_Boltzmann_Hulthen_Network_1s1(M_DM_scan, print_results):
 
         solution = NDE_solver(bb, 1)
         
-        omega_solution = Omega_DM(1.0, solution.y[0][-1], M_DM)
+        omega_solution = relic_fraction(solution.y[0, -1], M_DM)
 
         Omega_Boltzmann_Hulthen_Network_1s1.append([M_DM, omega_solution])
 
@@ -209,7 +209,7 @@ def do_scan_Boltzmann_Hulthen_Network_1s(M_DM_scan, print_results):
 
         solution = NDE_solver(bb, len(BS_list) )
         
-        omega_solution = Omega_DM(1.0, solution.y[0][-1], M_DM)
+        omega_solution = relic_fraction(solution.y[0, -1], M_DM)
 
         Omega_Boltzmann_Hulthen_Network_1s.append([M_DM, omega_solution])
 
@@ -301,7 +301,7 @@ def do_scan_Boltzmann_Hulthen_Network_1s2s2p(M_DM_scan, print_results):
         solution = NDE_solver(bb, len(BS_list) )
         
         try:
-            omega_solution = Omega_DM(1.0, solution.y[0][-1], M_DM)
+            omega_solution = relic_fraction(solution.y[0, -1], M_DM)
             Omega_Boltzmann_Hulthen_Network_1s2s2p.append([M_DM, omega_solution])
 
             if print_results == "y":

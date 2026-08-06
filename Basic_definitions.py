@@ -69,9 +69,15 @@ def sqrt_gs(T):
 
 ############################################################################
 
+en_per_entropy = 0.44 * eV
 
-def Omega_DM(h, Y_DM_inf, M):
-    return (Y_DM_inf * M)/(0.44 * eV) #(0.12/h**2) *
+def relic_fraction(Y_DM_inf, M):
+    """Return the relic abundance normalized to the observed value.
+
+    A return value of 1 means that the computed abundance equals
+    the observed dark-matter abundance.
+    """
+    return Y_DM_inf * M / en_per_entropy
 
 
 ############################################################################
